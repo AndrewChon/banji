@@ -2,13 +2,13 @@
 
 Banji is a concurrent event engine and EDA framework for Go.
 
-## About
-
 > [!CAUTION]
 > Banji is in the very, _very_ early stages of development.
 > \
 > There is undoubtedly room for improvement, and this codebase is bound to change. Please keep this in mind if you
 > intend to use this package.
+
+## About
 
 I created Banji mainly for myself. Most packages that use an event engine, or are based on a pub-sub pattern, require
 you to implement an interface with all of its listeners (e.g., gnet and gRPC). For most people, this is perfectly fine!
@@ -23,7 +23,7 @@ Banji.
 
 ## Features
 
-- Concurrent demultiplexing of events
+- Concurrent demultiplexing
 - Event priorities
 - Built-in events for happenings within the engine
 - Proactor-esque design (see `ErrorEvent`)
