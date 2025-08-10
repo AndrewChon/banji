@@ -33,3 +33,4 @@ go.work.sum
 
 # macOS stuff
 .DS_Store/
+.DS_Store

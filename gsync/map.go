@@ -1,14 +1,14 @@
-package gmap
+package gsync
 
 import (
 	"sync"
 )
 
-type SyncMap[K any, V any] struct {
+type Map[K any, V any] struct {
 	m sync.Map
 }
 
-func (sm *SyncMap[K, V]) Load(key K) (value V, ok bool) {
+func (sm *Map[K, V]) Load(key K) (value V, ok bool) {
 	v, ok := sm.m.Load(key)
 	if !ok {
 		return
@@ -18,11 +18,11 @@ func (sm *SyncMap[K, V]) Load(key K) (value V, ok bool) {
 	return
 }
 
-func (sm *SyncMap[K, V]) Store(key K, value V) {
+func (sm *Map[K, V]) Store(key K, value V) {
 	sm.m.Store(key, value)
 }
 
-func (sm *SyncMap[K, V]) LoadOrStore(key K, value V) (actual V, loaded bool) {
+func (sm *Map[K, V]) LoadOrStore(key K, value V) (actual V, loaded bool) {
 	v, loaded := sm.m.LoadOrStore(key, value)
 	if !loaded {
 		actual = value

@@ -1,4 +1,4 @@
-package banji
+package queue
 
 import (
 	"cmp"
@@ -8,10 +8,10 @@ import (
 
 var queueIDCounter atomic.Uint64
 
-// A Queue is a concurrency-safe min-priority queue that implements a pairing heap.
-// in a concurrent environment, the locking order must be consistent. Lock queues in order of their IDs (Queue of id 1,
-// ought to be locked before Queue of id 4, for example).
-type Queue[K cmp.Ordered, V any] struct {
+// A PairingQueue is a concurrency-safe min-priority queue that implements a pairing heap.
+// In a concurrent environment, the locking order must be consistent. Lock queues in order of their IDs (PairingQueue of id 1
+// ought to be locked before PairingQueue of id 4, for example).
+type PairingQueue[K cmp.Ordered, V any] struct {
 	sync.RWMutex
 	id uint64
 
@@ -19,8 +19,8 @@ type Queue[K cmp.Ordered, V any] struct {
 	size int
 }
 
-func NewQueue[K cmp.Ordered, V any]() *Queue[K, V] {
-	return &Queue[K, V]{
+func NewQueue[K cmp.Ordered, V any]() *PairingQueue[K, V] {
+	return &PairingQueue[K, V]{
 		id:   queueIDCounter.Add(1),
 		root: nil,
 		size: 0,
@@ -36,7 +36,7 @@ type tree[K cmp.Ordered, V any] struct {
 	youngestChild    *tree[K, V]
 }
 
-func (q *Queue[K, V]) Push(elem V, priority K) {
+func (q *PairingQueue[K, V]) Push(elem V, priority K) {
 	q.Lock()
 	defer q.Unlock()
 
@@ -44,7 +44,7 @@ func (q *Queue[K, V]) Push(elem V, priority K) {
 	q.size++
 }
 
-func (q *Queue[K, V]) Pop() (val V, ok bool) {
+func (q *PairingQueue[K, V]) Pop() (val V, ok bool) {
 	q.Lock()
 	defer q.Unlock()
 
@@ -60,21 +60,21 @@ func (q *Queue[K, V]) Pop() (val V, ok bool) {
 	return val, true
 }
 
-func (q *Queue[K, V]) Peek() V {
+func (q *PairingQueue[K, V]) Peek() V {
 	q.RLock()
 	defer q.RUnlock()
 
 	return findMin(q.root).val
 }
 
-func (q *Queue[K, V]) Size() int {
+func (q *PairingQueue[K, V]) Size() int {
 	q.RLock()
 	defer q.RUnlock()
 
 	return q.size
 }
 
-func (q *Queue[K, V]) Clear() {
+func (q *PairingQueue[K, V]) Clear() {
 	q.Lock()
 	defer q.Unlock()
 
@@ -82,7 +82,7 @@ func (q *Queue[K, V]) Clear() {
 	q.size = 0
 }
 
-func (q *Queue[K, V]) Meld(other *Queue[K, V]) {
+func (q *PairingQueue[K, V]) Meld(other *PairingQueue[K, V]) {
 	if q.id < other.id {
 		q.Lock()
 		other.Lock()
