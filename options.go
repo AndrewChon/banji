@@ -7,8 +7,9 @@ import (
 type Option func(*Options)
 
 type Options struct {
-	TPS      int
-	Demuxers int
+	TPS        int
+	Demuxers   int
+	Components []Component
 }
 
 func NewOptions(opts ...Option) *Options {
@@ -42,5 +43,11 @@ func WithDemuxers(n int) Option {
 
 	return func(options *Options) {
 		options.Demuxers = n
+	}
+}
+
+func WithComponents(components ...Component) Option {
+	return func(options *Options) {
+		options.Components = append(options.Components, components...)
 	}
 }

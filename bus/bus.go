@@ -75,7 +75,7 @@ func (b *Bus[EM, SU]) Subscribe(s SU) {
 	}
 
 	actual, loaded := b.subscribers.LoadOrStore(topic, []SU{s})
-	if loaded {
+	if !loaded {
 		return
 	}
 

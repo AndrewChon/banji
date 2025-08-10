@@ -208,21 +208,25 @@ func removeMin[K cmp.Ordered, V any](t *tree[K, V]) *tree[K, V] {
 
 // Emancipate is a helper function that detaches a node from its parent.
 func emancipate[K cmp.Ordered, V any](t *tree[K, V]) {
+	defer func() {
+		t.parent = nil
+		t.nextOlderSibling = nil
+	}()
+
 	parent := t.parent
 	if parent.youngestChild == t {
 		parent.youngestChild = t.nextOlderSibling
-	} else {
-		ys := parent.youngestChild
-		for ys != nil && ys.nextOlderSibling != t {
-			ys = ys.nextOlderSibling
-		}
-		if ys != nil {
-			ys.nextOlderSibling = t.nextOlderSibling
-		}
+		return
 	}
 
-	t.parent = nil
-	t.nextOlderSibling = nil
+	ys := parent.youngestChild
+	for ys != nil && ys.nextOlderSibling != t {
+		ys = ys.nextOlderSibling
+	}
+	if ys != nil {
+		ys.nextOlderSibling = t.nextOlderSibling
+	}
+
 }
 
 // DecreaseKey decreases the target node's key to the provided new key. The new key must be less than the node's current

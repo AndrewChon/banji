@@ -29,6 +29,12 @@ func New(opts ...Option) *Engine {
 		bus.WithErrorBuilder(errorBuilder),
 	)
 
+	for _, component := range eng.options.Components {
+		for _, r := range component.Bootstrap() {
+			eng.bus.Subscribe(r)
+		}
+	}
+
 	eng.ticker = time.NewTicker((1 * time.Second) / time.Duration(eng.options.TPS))
 
 	return eng

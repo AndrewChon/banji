@@ -7,6 +7,14 @@ import (
 	"github.com/google/uuid"
 )
 
+// A Component is a component that provides a collection of receivers.
+type Component interface {
+	Name() string
+	Author() string
+	Version() string
+	Bootstrap() []Receiver
+}
+
 // An Event is any type that can be emitted and routed by the engine.
 type Event interface {
 	ID() uuid.UUID

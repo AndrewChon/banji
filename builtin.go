@@ -87,3 +87,35 @@ func (e *ErrorEvent) Topic() string {
 func (e *ErrorEvent) Error() error {
 	return e.err
 }
+
+/* banji.log */
+
+const LogTopic = "banji.log"
+
+// LogEvent is an Event posted when a log message is created.
+type LogEvent struct {
+	EventEmbed
+	log *Log
+}
+
+func NewLogEvent(log *Log) *LogEvent {
+	return &LogEvent{
+		log: log,
+	}
+}
+
+func (e *LogEvent) Topic() string {
+	return LogTopic
+}
+
+func (e *LogEvent) Log() *Log {
+	return e.log
+}
+
+/**
+	Logging
+**/
+
+func NewErrorLog(err error) *Log {
+	return NewLog("banji.error", "An error was encountered while processing an event", ErrorLevel).Add("error", err)
+}
