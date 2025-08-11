@@ -1,5 +1,8 @@
 # Banji
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/AndrewChon/banji)](https://goreportcard.com/report/github.com/AndrewChon/banji)
+[![GoDoc](https://godoc.org/github.com/AndrewChon/banji?status.png)](https://godoc.org/github.com/AndrewChon/banji)
+
 Banji is a concurrent event engine and EDA framework for Go.
 
 > [!CAUTION]
