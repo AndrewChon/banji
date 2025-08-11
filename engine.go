@@ -5,7 +5,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"banji/bus"
+	"github.com/AndrewChon/banji/bus"
 )
 
 // The Engine brokers communication between decoupled components via Event and Receiver.

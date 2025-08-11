@@ -3,7 +3,7 @@ package test
 import (
 	"testing"
 
-	"banji/bus"
+	"github.com/AndrewChon/banji/bus"
 )
 
 const (

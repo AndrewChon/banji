@@ -5,8 +5,8 @@ import (
 	"cmp"
 	"sync"
 
-	"banji/gsync"
-	"banji/queue"
+	"github.com/AndrewChon/banji/gsync"
+	"github.com/AndrewChon/banji/queue"
 
 	"github.com/google/uuid"
 )

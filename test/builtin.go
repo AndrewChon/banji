@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"banji"
+	"github.com/AndrewChon/banji"
 
 	"github.com/google/uuid"
 )

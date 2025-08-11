@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"banji"
+	"github.com/AndrewChon/banji"
 )
 
 const (

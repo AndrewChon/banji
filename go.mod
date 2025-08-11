@@ -1,4 +1,4 @@
-module banji
+module github.com/AndrewChon/banji
 
 go 1.24.5
 

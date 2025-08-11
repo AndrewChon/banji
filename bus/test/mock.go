@@ -3,7 +3,7 @@ package test
 import (
 	"sync/atomic"
 
-	"banji/bus"
+	"github.com/AndrewChon/banji/bus"
 
 	"github.com/google/uuid"
 )
