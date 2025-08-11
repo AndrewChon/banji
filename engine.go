@@ -1,6 +1,8 @@
 package banji
 
 import (
+	"log"
+	"reflect"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -30,7 +32,12 @@ func New(opts ...Option) *Engine {
 	)
 
 	for _, component := range eng.options.Components {
-		for _, r := range component.Bootstrap() {
+		receivers, err := component.Bootstrap()
+		if err != nil {
+			log.Panicf("failed to load component %T: %v\n", reflect.TypeOf(component), err)
+		}
+
+		for _, r := range receivers {
 			eng.bus.Subscribe(r)
 		}
 	}

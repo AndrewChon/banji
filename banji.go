@@ -9,10 +9,7 @@ import (
 
 // A Component is a component that provides a collection of receivers.
 type Component interface {
-	Name() string
-	Author() string
-	Version() string
-	Bootstrap() []Receiver
+	Bootstrap() ([]Receiver, error)
 }
 
 // An Event is any type that can be emitted and routed by the engine.

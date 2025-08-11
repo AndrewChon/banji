@@ -1,5 +1,6 @@
 # Banji
 
+[![Scorecard supply-chain security](https://github.com/AndrewChon/banji/actions/workflows/scorecard.yml/badge.svg)](https://github.com/AndrewChon/banji/actions/workflows/scorecard.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/AndrewChon/banji)](https://goreportcard.com/report/github.com/AndrewChon/banji)
 [![GoDoc](https://godoc.org/github.com/AndrewChon/banji?status.png)](https://godoc.org/github.com/AndrewChon/banji)
 
@@ -30,7 +31,7 @@ Banji.
 - Event priorities
 - Built-in events for happenings within the engine
 - Proactor-esque design (see `ErrorEvent`)
-- Reflection-free
+- Reflection-free routing
 - Graceful shutdown mechanics
 - Tick-based engine loop
 - Unified logging system
