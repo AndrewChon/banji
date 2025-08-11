@@ -30,7 +30,7 @@ Banji.
 - Reflection-free
 - Graceful shutdown mechanics
 - Tick-based engine loop
-- **WIP:** Unified logging system
+- Unified logging system
 
 ## Quick Start
 
