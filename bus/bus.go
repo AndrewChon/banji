@@ -49,8 +49,8 @@ type Bus[EM Emittable, SU Subscriber[EM]] struct {
 func NewBus[EM Emittable, SU Subscriber[EM]](opts ...Option) *Bus[EM, SU] {
 	b := &Bus[EM, SU]{
 		options:         NewOptions(opts...),
-		bufferQueue:     queue.NewQueue[uint8, EM](),
-		workingQueue:    queue.NewQueue[uint8, EM](),
+		bufferQueue:     queue.NewPairing[uint8, EM](),
+		workingQueue:    queue.NewPairing[uint8, EM](),
 		bufferQueueCond: sync.NewCond(&sync.Mutex{}),
 	}
 

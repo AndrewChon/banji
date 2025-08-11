@@ -2,6 +2,7 @@ package queue
 
 import (
 	"cmp"
+	"errors"
 	"sync"
 	"sync/atomic"
 )
@@ -19,21 +20,12 @@ type PairingQueue[K cmp.Ordered, V any] struct {
 	size int
 }
 
-func NewQueue[K cmp.Ordered, V any]() *PairingQueue[K, V] {
+func NewPairing[K cmp.Ordered, V any]() *PairingQueue[K, V] {
 	return &PairingQueue[K, V]{
 		id:   queueIDCounter.Add(1),
 		root: nil,
 		size: 0,
 	}
-}
-
-type tree[K cmp.Ordered, V any] struct {
-	key K
-	val V
-
-	parent           *tree[K, V]
-	nextOlderSibling *tree[K, V]
-	youngestChild    *tree[K, V]
 }
 
 func (q *PairingQueue[K, V]) Push(elem V, priority K) {
@@ -82,13 +74,16 @@ func (q *PairingQueue[K, V]) Clear() {
 	q.size = 0
 }
 
+// Meld merges another queue with this queue.
 func (q *PairingQueue[K, V]) Meld(other *PairingQueue[K, V]) {
 	if q.id < other.id {
 		q.Lock()
 		other.Lock()
-	} else {
+	} else if q.id > other.id {
 		other.Lock()
 		q.Lock()
+	} else {
+		panic(errors.New("concurrency-safety error: one or more queues share the same ID"))
 	}
 
 	defer q.Unlock()
@@ -101,7 +96,44 @@ func (q *PairingQueue[K, V]) Meld(other *PairingQueue[K, V]) {
 	other.size = 0
 }
 
+// Meld melds the underlying trees of PairingQueue a and b and returns a new
+// PairingQueue. This function is inherently destructive.
+func Meld[K cmp.Ordered, V any](a, b *PairingQueue[K, V]) (*PairingQueue[K, V], error) {
+	if a.id < b.id {
+		a.Lock()
+		b.Lock()
+	} else if a.id > b.id {
+		b.Lock()
+		a.Lock()
+	} else {
+		return nil, errors.New("concurrency-safety error: one or more queues share the same ID")
+	}
+
+	defer a.Unlock()
+	defer b.Unlock()
+
+	queueUnion := NewPairing[K, V]()
+	queueUnion.root = meld(a.root, b.root)
+	queueUnion.size = a.size + b.size
+
+	a.root = nil
+	a.size = 0
+	b.root = nil
+	b.size = 0
+
+	return queueUnion, nil
+}
+
 // Pairing Heap implementation
+
+type tree[K cmp.Ordered, V any] struct {
+	key K
+	val V
+
+	parent           *tree[K, V]
+	nextOlderSibling *tree[K, V]
+	youngestChild    *tree[K, V]
+}
 
 // FindMin returns the root node of the tree, or nil if the tree is empty.
 func findMin[K cmp.Ordered, V any](t *tree[K, V]) *tree[K, V] {
@@ -193,7 +225,7 @@ func removeMin[K cmp.Ordered, V any](t *tree[K, V]) *tree[K, V] {
 		return nil
 	}
 
-	// We explicitly "disown" all its children. While not strictly necessary, it can free up the original Root node for
+	// We explicitly "disown" all its children. While not strictly necessary, it can free up the original root node for
 	// GC earlier, and proactively prevent any strange edge cases that may occur.
 	youngestChild := t.youngestChild
 	current := youngestChild

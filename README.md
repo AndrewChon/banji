@@ -49,7 +49,7 @@ func main() {
 
     // Register your receivers here.
     eng.Subscribe(NewMyReceiver("Hiii!"))
-	
+
     eng.Start() // This is non-blocking.
     defer eng.Stop()
 
@@ -115,7 +115,7 @@ type (r *MyReceiver) Handle(e Event) error {
     event, _ := e.(*MyEvent)
     fmt.Println(event.SomeStuff())
     fmt.Println(r.someOtherStuff)
-	
+
     return nil
 }
 

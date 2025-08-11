@@ -10,6 +10,23 @@ import (
 
 type Level int8
 
+func (l Level) String() string {
+	switch l {
+	case DebugLevel:
+		return "debug"
+	case InfoLevel:
+		return "info"
+	case WarnLevel:
+		return "warn"
+	case ErrorLevel:
+		return "error"
+	case FatalLevel:
+		return "fatal"
+	}
+
+	return "unknown"
+}
+
 const (
 	DebugLevel Level = iota - 1
 	InfoLevel
@@ -19,8 +36,8 @@ const (
 )
 
 type LogField struct {
-	K string `json:"k"`
-	V any    `json:"v"`
+	K string `json:"-"`
+	V any    `json:"-"`
 }
 
 type LogData []LogField
@@ -110,6 +127,26 @@ func (l *Log) With(x ...any) error {
 
 	l.data = logData
 	return nil
+}
+
+func (l *Log) MarshalJSON() ([]byte, error) {
+	exported := &struct {
+		ID          uuid.UUID `json:"id"`
+		Postmark    time.Time `json:"postmark"`
+		Kind        string    `json:"kind"`
+		Description string    `json:"description"`
+		Level       Level     `json:"level"`
+		Data        LogData   `json:"data"`
+	}{
+		ID:          l.id,
+		Postmark:    l.postmark,
+		Kind:        l.kind,
+		Description: l.description,
+		Level:       l.level,
+		Data:        l.data,
+	}
+
+	return json.Marshal(exported)
 }
 
 func (ld LogData) MarshalJSON() ([]byte, error) {
