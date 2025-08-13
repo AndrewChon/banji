@@ -14,16 +14,11 @@ Banji is a concurrent event engine and EDA framework for Go.
 
 ## About
 
-I created Banji mainly for myself. Most packages that use an event engine, or are based on a pub-sub pattern, require
-you to implement an interface with all of its listeners (e.g., gnet and gRPC). For most people, this is perfectly fine!
-And these have become invaluable tools for many in the Go community. However, I wanted my projects to have a unified
-event engine, from which many components can communicate with each other without needing to implement every possible
-listener, allowing me to build onto it over time easily. In addition, I wanted a central, structured logging system for
-all these components that would enable me to handle their logs in whichever way I wanted.
-
-There are some events we do not need to handle or care about; some capabilities we simply do not need. Conversely, there
-are some components we may desire in the future but cannot reasonably foresee needing now. This is the philosophy behind
-Banji.
+I created Banji mainly for myself. The goal of Banji is to provide a structured and extensible event engine that can be
+used for anything. There are some events we do not need to handle or care about; some capabilities we simply do not
+need. Conversely, there are some components we may desire in the future but cannot reasonably foresee needing now.
+Therefore, we shouldn't need to implement an interface and change our implementation every time some new component or
+capability comes along.
 
 ## Features
 
@@ -38,7 +33,7 @@ Banji.
 
 ## Quick Start
 
-Running the engine is pretty straight-forward.
+Check the [wiki](https://github.com/AndrewChon/banji/wiki) for a quick tutorial on how to create events, receivers, and components.
 
 ```go
 func main() {
@@ -63,70 +58,4 @@ func main() {
     
     <- stop
 }
-```
-
-Events implement the `banji.Event` interface by embedding `banji.EventEmbed`.
-
-```go
-// You should define a constant for your topic strings, for everyone else's sake.
-
-const MyTopic = "me.my"
-
-type MyEvent struct {
-    banji.EventEmbed
-    someStuff string
-}
-
-type (e *MyEvent) Topic() string {
-    return MyTopic
-}
-
-type (e *MyEvent) SomeStuff() string {
-    return e.someStuff
-}
-
-// It may be helpful to define an initializer,
-// especially if you want other components to create your event.
-
-func NewMyEvent(someStuff string) *MyEvent {
-    return &MyEvent{
-        someStuff: someStuff,
-    }
-}
-
-```
-
-Likewise, receivers implement `banji.Receiver` by embedding `banji.ReceiverEmbed`.
-
-```go
-
-// In the same package or another package...
-
-type MyReceiver struct {
-    banji.ReceiverEmbed
-    someOtherStuff string
-}
-
-type (r *MyReceiver) Topic() string {
-    return MyTopic
-}
-
-type (r *MyReceiver) Handle(e Event) error {
-    // You should not need to worry about validating type assertion
-    // as long as you have namespaced your topic string (to prevent
-    // conflicts) and aren't doing something weird.
-
-    event, _ := e.(*MyEvent)
-    fmt.Println(event.SomeStuff())
-    fmt.Println(r.someOtherStuff)
-
-    return nil
-}
-
-func NewMyReceiver(someOtherStuff string) *MyReceiver {
-    return &MyReceiver{
-        someOtherStuff: someOtherStuff,
-    }
-}
-
 ```
