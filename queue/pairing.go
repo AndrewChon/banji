@@ -9,10 +9,10 @@ import (
 
 var queueIDCounter atomic.Uint64
 
-// A PairingQueue is a concurrency-safe min-priority queue that implements a pairing heap.
-// In a concurrent environment, the locking order must be consistent. Lock queues in order of their IDs (PairingQueue of id 1
-// ought to be locked before PairingQueue of id 4, for example).
-type PairingQueue[K cmp.Ordered, V any] struct {
+// A Pairing is a concurrency-safe min-priority queue that implements a pairing heap.
+// In a concurrent environment, the locking order must be consistent. Lock queues in order of their IDs (Pairing of id 1
+// ought to be locked before Pairing of id 4, for example).
+type Pairing[K cmp.Ordered, V any] struct {
 	sync.RWMutex
 	id uint64
 
@@ -20,15 +20,15 @@ type PairingQueue[K cmp.Ordered, V any] struct {
 	size int
 }
 
-func NewPairing[K cmp.Ordered, V any]() *PairingQueue[K, V] {
-	return &PairingQueue[K, V]{
+func NewPairing[K cmp.Ordered, V any]() *Pairing[K, V] {
+	return &Pairing[K, V]{
 		id:   queueIDCounter.Add(1),
 		root: nil,
 		size: 0,
 	}
 }
 
-func (q *PairingQueue[K, V]) Push(elem V, priority K) {
+func (q *Pairing[K, V]) Push(elem V, priority K) {
 	q.Lock()
 	defer q.Unlock()
 
@@ -36,7 +36,7 @@ func (q *PairingQueue[K, V]) Push(elem V, priority K) {
 	q.size++
 }
 
-func (q *PairingQueue[K, V]) Pop() (val V, ok bool) {
+func (q *Pairing[K, V]) Pop() (val V, ok bool) {
 	q.Lock()
 	defer q.Unlock()
 
@@ -52,21 +52,21 @@ func (q *PairingQueue[K, V]) Pop() (val V, ok bool) {
 	return val, true
 }
 
-func (q *PairingQueue[K, V]) Peek() V {
+func (q *Pairing[K, V]) Peek() V {
 	q.RLock()
 	defer q.RUnlock()
 
 	return findMin(q.root).val
 }
 
-func (q *PairingQueue[K, V]) Size() int {
+func (q *Pairing[K, V]) Size() int {
 	q.RLock()
 	defer q.RUnlock()
 
 	return q.size
 }
 
-func (q *PairingQueue[K, V]) Clear() {
+func (q *Pairing[K, V]) Clear() {
 	q.Lock()
 	defer q.Unlock()
 
@@ -75,7 +75,7 @@ func (q *PairingQueue[K, V]) Clear() {
 }
 
 // Meld merges another queue with this queue.
-func (q *PairingQueue[K, V]) Meld(other *PairingQueue[K, V]) {
+func (q *Pairing[K, V]) Meld(other *Pairing[K, V]) {
 	if q.id < other.id {
 		q.Lock()
 		other.Lock()
@@ -96,9 +96,9 @@ func (q *PairingQueue[K, V]) Meld(other *PairingQueue[K, V]) {
 	other.size = 0
 }
 
-// Meld melds the underlying trees of PairingQueue a and b and returns a new
-// PairingQueue. This function is inherently destructive.
-func Meld[K cmp.Ordered, V any](a, b *PairingQueue[K, V]) (*PairingQueue[K, V], error) {
+// Meld melds the underlying trees of Pairing a and b and returns a new
+// Pairing. This function is inherently destructive.
+func Meld[K cmp.Ordered, V any](a, b *Pairing[K, V]) (*Pairing[K, V], error) {
 	if a.id < b.id {
 		a.Lock()
 		b.Lock()
@@ -226,7 +226,7 @@ func removeMin[K cmp.Ordered, V any](t *tree[K, V]) *tree[K, V] {
 	}
 
 	// We explicitly "disown" all its children. While not strictly necessary, it can free up the original root node for
-	// GC earlier, and proactively prevent any strange edge cases that may occur.
+	// GC earlier and proactively prevent any strange edge cases that may occur.
 	youngestChild := t.youngestChild
 	current := youngestChild
 	for current != nil {

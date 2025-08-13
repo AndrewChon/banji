@@ -2,6 +2,7 @@
 package banji
 
 import (
+	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
@@ -28,7 +29,7 @@ type Receiver interface {
 	ID() uuid.UUID
 	Postmark() time.Time
 	Topic() string
-	Handle(em Event) error
+	Handle(event Event) error
 
 	mark()
 }
@@ -38,6 +39,54 @@ type Bus interface {
 	Tick()
 	Subscribe(r Receiver)
 	Unsubscribe(r Receiver)
-	Post(e Event, priority uint8)
+	Post(event Event, priority uint8)
 	Size() int
+}
+
+// EventEmbed contains internal methods required to implement the Event interface.
+type EventEmbed struct {
+	id       uuid.UUID
+	postmark time.Time
+	canceled atomic.Bool
+}
+
+func (e *EventEmbed) ID() uuid.UUID {
+	return e.id
+}
+
+func (e *EventEmbed) Postmark() time.Time {
+	return e.postmark
+}
+
+func (e *EventEmbed) Cancel() {
+	e.canceled.Store(true)
+}
+
+func (e *EventEmbed) Canceled() bool {
+	return e.canceled.Load()
+}
+
+func (e *EventEmbed) mark() {
+	e.id = uuid.New()
+	e.postmark = time.Now()
+	e.canceled.Store(false)
+}
+
+// ReceiverEmbed contains internal methods required to implement the Receiver interface.
+type ReceiverEmbed struct {
+	id       uuid.UUID
+	postmark time.Time
+}
+
+func (r *ReceiverEmbed) ID() uuid.UUID {
+	return r.id
+}
+
+func (r *ReceiverEmbed) Postmark() time.Time {
+	return r.postmark
+}
+
+func (r *ReceiverEmbed) mark() {
+	r.id = uuid.New()
+	r.postmark = time.Now()
 }

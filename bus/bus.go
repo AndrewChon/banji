@@ -62,7 +62,7 @@ func (b *Bus[EM, SU]) Tick() {
 	defer b.unlockBufferQueue()
 
 	// TODO: Honestly, I just got lazy. It is inevitable that I will begrudgingly return to this later.
-	b.workingQueue.(*queue.PairingQueue[uint8, EM]).Meld(b.bufferQueue.(*queue.PairingQueue[uint8, EM]))
+	b.workingQueue.(*queue.Pairing[uint8, EM]).Meld(b.bufferQueue.(*queue.Pairing[uint8, EM]))
 	for em, ok := b.workingQueue.Pop(); ok; em, ok = b.workingQueue.Pop() {
 		b.demux(em)
 	}
@@ -123,8 +123,8 @@ func (b *Bus[EM, SU]) lockBufferQueue() {
 func (b *Bus[EM, SU]) unlockBufferQueue() {
 	b.bufferQueueCond.L.Lock()
 	defer func() {
-		b.bufferQueueCond.Broadcast()
 		b.bufferQueueCond.L.Unlock()
+		b.bufferQueueCond.Broadcast()
 	}()
 
 	b.bufferQueueLocked = false

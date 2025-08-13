@@ -1,4 +1,4 @@
-**Banji, a concurrent event engine and EDA framework for Go.**
+Banji, a concurrent event engine and EDA framework for Go.
 Copyright (C) 2025 Andrew Chon.
 
 This program is free software: you can redistribute it and/or modify

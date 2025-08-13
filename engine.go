@@ -62,26 +62,7 @@ func (eng *Engine) Start() {
 	eng.active.Store(true)
 	eng.Post(new(StartEvent), 0)
 
-	go func() {
-		for {
-			select {
-			case tick := <-eng.ticker.C:
-				eng.loopWg.Add(1)
-
-				eng.Post(&PreTickEvent{
-					tick: tick,
-				}, 0)
-				eng.bus.Tick()
-				eng.Post(&PostTickEvent{
-					tick: tick,
-				}, 0)
-
-				eng.loopWg.Done()
-			case <-eng.stopLoop:
-				return
-			}
-		}
-	}()
+	go eng.runLoop()
 }
 
 // Stop gracefully shuts down the engine, and thus, is a blocking operation.
@@ -121,6 +102,27 @@ func (eng *Engine) Post(event Event, priority uint8) {
 	if eng.active.Load() {
 		event.mark()
 		eng.bus.Post(event, priority)
+	}
+}
+
+func (eng *Engine) runLoop() {
+	for {
+		select {
+		case tick := <-eng.ticker.C:
+			eng.loopWg.Add(1)
+
+			eng.Post(&PreTickEvent{
+				tick: tick,
+			}, 0)
+			eng.bus.Tick()
+			eng.Post(&PostTickEvent{
+				tick: tick,
+			}, 0)
+
+			eng.loopWg.Done()
+		case <-eng.stopLoop:
+			return
+		}
 	}
 }
 

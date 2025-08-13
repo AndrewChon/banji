@@ -111,11 +111,3 @@ func (e *LogEvent) Topic() string {
 func (e *LogEvent) Log() *Log {
 	return e.log
 }
-
-/**
-	Logging
-**/
-
-func NewErrorLog(err error) *Log {
-	return NewLog("banji.error", "An error was encountered while processing an event", ErrorLevel).Add("error", err)
-}
