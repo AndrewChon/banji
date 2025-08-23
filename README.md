@@ -33,7 +33,8 @@ capability comes along.
 
 ## Quick Start
 
-Check the [wiki](https://github.com/AndrewChon/banji/wiki) for a quick tutorial on how to create events, receivers, and components.
+Check the [wiki](https://github.com/AndrewChon/banji/wiki) for a quick tutorial on how to create events, receivers, and
+components.
 
 ```go
 func main() {
@@ -43,7 +44,7 @@ func main() {
 
     eng := banji.New(
         banji.WithTPS(128),
-        banji.WithDemuxers(8))
+        banji.WithDemuxers(8),
     )
 
     // Register your receivers here.

@@ -44,14 +44,18 @@ type Bus[EM Emittable, SU Subscriber[EM]] struct {
 
 	bufferQueueCond   *sync.Cond
 	bufferQueueLocked bool
+
+	demuxSema chan struct{}
 }
 
 func NewBus[EM Emittable, SU Subscriber[EM]](opts ...Option) *Bus[EM, SU] {
+	options := NewOptions(opts...)
 	b := &Bus[EM, SU]{
-		options:         NewOptions(opts...),
+		options:         options,
 		bufferQueue:     queue.NewPairing[uint8, EM](),
 		workingQueue:    queue.NewPairing[uint8, EM](),
 		bufferQueueCond: sync.NewCond(&sync.Mutex{}),
+		demuxSema:       make(chan struct{}, options.Demuxers),
 	}
 
 	return b
@@ -106,6 +110,13 @@ func (b *Bus[EM, SU]) Unsubscribe(s SU) {
 }
 
 func (b *Bus[EM, SU]) Post(em EM, priority uint8) {
+	b.bufferQueueCond.L.Lock()
+	defer b.bufferQueueCond.L.Unlock()
+
+	for b.bufferQueueLocked {
+		b.bufferQueueCond.Wait()
+	}
+
 	b.bufferQueue.Push(em, priority)
 }
 
@@ -141,7 +152,9 @@ func (b *Bus[EM, SU]) demux(em EM) {
 	}
 
 	for _, sub := range subs {
-		go func() {
+		b.demuxSema <- struct{}{}
+		go func(sub Subscriber[EM]) {
+			defer func() { <-b.demuxSema }()
 			err := sub.Handle(em)
 			if err == nil {
 				return
@@ -151,6 +164,6 @@ func (b *Bus[EM, SU]) demux(em EM) {
 			if errTyped, ok := errEm.(EM); ok {
 				b.Post(errTyped, 0)
 			}
-		}()
+		}(sub)
 	}
 }
