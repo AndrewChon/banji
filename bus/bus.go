@@ -5,8 +5,8 @@ import (
 	"cmp"
 	"sync"
 
-	"github.com/AndrewChon/banji/gsync"
-	"github.com/AndrewChon/banji/queue"
+	"github.com/AndrewChon/gsync"
+	"github.com/AndrewChon/pqueue"
 
 	"github.com/google/uuid"
 )
@@ -52,8 +52,8 @@ func NewBus[EM Emittable, SU Subscriber[EM]](opts ...Option) *Bus[EM, SU] {
 	options := NewOptions(opts...)
 	b := &Bus[EM, SU]{
 		options:         options,
-		bufferQueue:     queue.NewPairing[uint8, EM](),
-		workingQueue:    queue.NewPairing[uint8, EM](),
+		bufferQueue:     pqueue.NewSkew[uint8, EM](),
+		workingQueue:    pqueue.NewSkew[uint8, EM](),
 		bufferQueueCond: sync.NewCond(&sync.Mutex{}),
 		demuxSema:       make(chan struct{}, options.Demuxers),
 	}
@@ -66,7 +66,7 @@ func (b *Bus[EM, SU]) Tick() {
 	defer b.unlockBufferQueue()
 
 	// TODO: Honestly, I just got lazy. It is inevitable that I will begrudgingly return to this later.
-	b.workingQueue.(*queue.Pairing[uint8, EM]).Meld(b.bufferQueue.(*queue.Pairing[uint8, EM]))
+	b.workingQueue.(*pqueue.Skew[uint8, EM]).Meld(b.bufferQueue.(*pqueue.Skew[uint8, EM]))
 	for em, ok := b.workingQueue.Pop(); ok; em, ok = b.workingQueue.Pop() {
 		b.demux(em)
 	}

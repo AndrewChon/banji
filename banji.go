@@ -67,8 +67,8 @@ func (e *EventEmbed) Canceled() bool {
 }
 
 func (e *EventEmbed) mark() {
-	e.id = uuid.New()
 	e.postmark = time.Now()
+	e.id = uuid.New()
 	e.canceled.Store(false)
 }
 
@@ -87,6 +87,6 @@ func (r *ReceiverEmbed) Postmark() time.Time {
 }
 
 func (r *ReceiverEmbed) mark() {
-	r.id = uuid.New()
 	r.postmark = time.Now()
+	r.id = uuid.New()
 }
