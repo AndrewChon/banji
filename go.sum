@@ -2,5 +2,7 @@ github.com/AndrewChon/gsync v1.1.0 h1:iMu2OW5LkcSk70WkfPbR6G3aedyiPZnIueh6Ier0S1
 github.com/AndrewChon/gsync v1.1.0/go.mod h1:ZH048/ZUC2KVaB1zV2KhKj+bIpiO1N8QizmAFelET2w=
 github.com/AndrewChon/pqueue v1.0.0 h1:taDu91GMSI7qeYJO9G0WFc5IUFMOIHbww7hm9SWCmHk=
 github.com/AndrewChon/pqueue v1.0.0/go.mod h1:mjC/UOegM7HBWDDvcou0iSNHExpbmJQo4JqoQ7hzQyE=
+github.com/AndrewChon/pqueue v1.1.0 h1:HS/R0TCseq0YWKLlbXvtOjUb0WLGlyzttxIHGEyJp5M=
+github.com/AndrewChon/pqueue v1.1.0/go.mod h1:mjC/UOegM7HBWDDvcou0iSNHExpbmJQo4JqoQ7hzQyE=
 github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
 github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=

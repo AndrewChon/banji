@@ -118,7 +118,7 @@ func (eng *Engine) runLoop() {
 			eng.Post(&PostTickEvent{
 				tick: tick,
 			}, 0)
-
+			
 			eng.loopWg.Done()
 		case <-eng.stopLoop:
 			return

@@ -52,8 +52,8 @@ func NewBus[EM Emittable, SU Subscriber[EM]](opts ...Option) *Bus[EM, SU] {
 	options := NewOptions(opts...)
 	b := &Bus[EM, SU]{
 		options:         options,
-		bufferQueue:     pqueue.NewSkew[uint8, EM](),
-		workingQueue:    pqueue.NewSkew[uint8, EM](),
+		bufferQueue:     pqueue.NewBinary[uint8, EM](),
+		workingQueue:    pqueue.NewBinary[uint8, EM](),
 		bufferQueueCond: sync.NewCond(&sync.Mutex{}),
 		demuxSema:       make(chan struct{}, options.Demuxers),
 	}
@@ -66,7 +66,7 @@ func (b *Bus[EM, SU]) Tick() {
 	defer b.unlockBufferQueue()
 
 	// TODO: Honestly, I just got lazy. It is inevitable that I will begrudgingly return to this later.
-	b.workingQueue.(*pqueue.Skew[uint8, EM]).Meld(b.bufferQueue.(*pqueue.Skew[uint8, EM]))
+	b.workingQueue.(*pqueue.Binary[uint8, EM]).Meld(b.bufferQueue.(*pqueue.Binary[uint8, EM]))
 	for em, ok := b.workingQueue.Pop(); ok; em, ok = b.workingQueue.Pop() {
 		b.demux(em)
 	}
