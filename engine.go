@@ -1,8 +1,7 @@
 package banji
 
 import (
-	"log"
-	"reflect"
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -12,12 +11,13 @@ import (
 
 // The Engine brokers communication between decoupled components via Event and Receiver.
 type Engine struct {
-	options  *Options
-	bus      Bus
-	active   atomic.Bool
-	ticker   *time.Ticker
-	loopWg   sync.WaitGroup
-	stopLoop chan struct{}
+	options   *Options
+	bus       Bus
+	active    atomic.Bool
+	accepting atomic.Bool
+	ticker    *time.Ticker
+	loopWg    sync.WaitGroup
+	stopLoop  chan struct{}
 }
 
 func New(opts ...Option) *Engine {
@@ -27,22 +27,23 @@ func New(opts ...Option) *Engine {
 	}
 
 	eng.bus = bus.NewBus[Event, Receiver](
-		bus.WithDemuxers(8),
+		bus.WithDemuxers(eng.options.Demuxers),
 		bus.WithErrorBuilder(errorBuilder),
 	)
 
-	for _, component := range eng.options.Components {
-		receivers, err := component.Bootstrap()
+	eng.ticker = time.NewTicker((1 * time.Second) / time.Duration(eng.options.TPS))
+
+	for _, c := range eng.options.Components {
+		rs, err := c.Bootstrap()
+
 		if err != nil {
-			log.Panicf("failed to load component %T: %v\n", reflect.TypeOf(component), err)
+			panic(fmt.Sprintf("failed to load component %T: %v\n", c, err))
 		}
 
-		for _, r := range receivers {
-			eng.bus.Subscribe(r)
+		for _, r := range rs {
+			eng.Subscribe(r)
 		}
 	}
-
-	eng.ticker = time.NewTicker((1 * time.Second) / time.Duration(eng.options.TPS))
 
 	return eng
 }
@@ -51,30 +52,29 @@ func (eng *Engine) Active() bool {
 	return eng.active.Load()
 }
 
-// Start starts the engine. Start is a non-blocking operation.
-//
-// Receivers can subscribe to StartTopic to listen for this operation.
+// Start is a non-blocking operation that starts the engine. Components can listen for StartTopic to be notified when
+// this function has been executed.
 func (eng *Engine) Start() {
 	if eng.active.Load() {
 		return
 	}
 
 	eng.active.Store(true)
-	eng.Post(new(StartEvent), 0)
+	eng.accepting.Store(true)
 
+	eng.Post(new(StartEvent), 0)
 	go eng.runLoop()
 }
 
-// Stop gracefully shuts down the engine, and thus, is a blocking operation.
-//
-// Receivers can subscribe to StopTopic to listen for this operation.
+// Stop is a blocking operation that gracefully shuts down the engine. Components can listen for StopTopic to be
+// notified when this function has been executed.
 func (eng *Engine) Stop() {
 	if !eng.active.Load() {
 		return
 	}
 
 	eng.Post(new(StopEvent), 0)
-	eng.active.Store(false) // Prevent any new incoming events.
+	eng.accepting.Store(false)
 
 	eng.ticker.Stop()
 	eng.stopLoop <- struct{}{}
@@ -83,23 +83,26 @@ func (eng *Engine) Stop() {
 	for eng.bus.Size() > 0 {
 		eng.bus.Tick()
 	}
+
+	eng.active.Store(false)
 }
 
-// Subscribe registers a Receiver.
+// Subscribe registers a Receiver to its associated topic. A Receiver can only be subscribed once. Subsequent calls
+// to Subscribe with the same Receiver will have no effect.
 func (eng *Engine) Subscribe(r Receiver) {
 	r.mark()
 	eng.bus.Subscribe(r)
 }
 
-// Unsubscribe unregisters a Receiver. Note that this can be an expensive operation, and thus it should be used
+// Unsubscribe unregisters a Receiver. Note that this can be an expensive operation to perform; thus, it should be used
 // sparingly.
 func (eng *Engine) Unsubscribe(r Receiver) {
 	eng.bus.Unsubscribe(r)
 }
 
-// Post posts an Event to the engine. The Event will be handled on the next tick.
+// Post posts an Event to the engine, which will be handled on the next available tick.
 func (eng *Engine) Post(event Event, priority uint8) {
-	if eng.active.Load() {
+	if eng.accepting.Load() {
 		event.mark()
 		eng.bus.Post(event, priority)
 	}
@@ -114,11 +117,13 @@ func (eng *Engine) runLoop() {
 			eng.Post(&PreTickEvent{
 				tick: tick,
 			}, 0)
+
 			eng.bus.Tick()
+
 			eng.Post(&PostTickEvent{
 				tick: tick,
 			}, 0)
-			
+
 			eng.loopWg.Done()
 		case <-eng.stopLoop:
 			return

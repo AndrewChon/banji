@@ -37,6 +37,7 @@ func BenchmarkTick(b *testing.B) {
 		bs.Post(new(MockEmittable), 0)
 	}
 
+	b.ResetTimer()
 	b.StartTimer()
 	bs.Tick()
 	b.StopTimer()

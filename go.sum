@@ -4,5 +4,11 @@ github.com/AndrewChon/pqueue v1.0.0 h1:taDu91GMSI7qeYJO9G0WFc5IUFMOIHbww7hm9SWCm
 github.com/AndrewChon/pqueue v1.0.0/go.mod h1:mjC/UOegM7HBWDDvcou0iSNHExpbmJQo4JqoQ7hzQyE=
 github.com/AndrewChon/pqueue v1.1.0 h1:HS/R0TCseq0YWKLlbXvtOjUb0WLGlyzttxIHGEyJp5M=
 github.com/AndrewChon/pqueue v1.1.0/go.mod h1:mjC/UOegM7HBWDDvcou0iSNHExpbmJQo4JqoQ7hzQyE=
+github.com/AndrewChon/pqueue v1.2.0 h1:Nq3s68TyGvX+gLOXxTUI4c/OmDSmyVsRJ4ah8ZokY1s=
+github.com/AndrewChon/pqueue v1.2.0/go.mod h1:mjC/UOegM7HBWDDvcou0iSNHExpbmJQo4JqoQ7hzQyE=
+github.com/AndrewChon/pqueue v1.2.1 h1:Kp7XEcva9T1mY2sLZUlI8smzpSzuG2GmIF6SQ0KWkNY=
+github.com/AndrewChon/pqueue v1.2.1/go.mod h1:mjC/UOegM7HBWDDvcou0iSNHExpbmJQo4JqoQ7hzQyE=
+github.com/AndrewChon/pqueue v1.2.2 h1:WvagOEUZjMjdWZLw2vDbIJAvTPCdzWRbuQKNuCtcQkM=
+github.com/AndrewChon/pqueue v1.2.2/go.mod h1:mjC/UOegM7HBWDDvcou0iSNHExpbmJQo4JqoQ7hzQyE=
 github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
 github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
