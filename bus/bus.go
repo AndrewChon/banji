@@ -37,18 +37,16 @@ type Subscriber[EM Emittable] interface {
 type Bus[EM Emittable, SU Subscriber[EM]] struct {
 	options *Options
 
-	bufferQueue  PriorityQueue[uint8, EM]
-	workingQueue PriorityQueue[uint8, EM]
+	bufferQueue   PriorityQueue[uint8, EM]
+	workingQueue  PriorityQueue[uint8, EM]
+	bufferQueueMu sync.Mutex
+
+	subscribeQueue     *pqueue.CircularBuffer[SU]
+	unsubscribeQueue   *pqueue.CircularBuffer[SU]
+	subscribers        gsync.Map[string, []SU]
+	subscriberQueuesMu sync.Mutex
 
 	wp *workerPool
-
-	subscribeQueue   *pqueue.CircularBuffer[SU]
-	unsubscribeQueue *pqueue.CircularBuffer[SU]
-	subscribers      gsync.Map[string, []SU]
-
-	bufferQueueMu      sync.Mutex
-	subscribeQueueMu   sync.Mutex
-	unsubscribeQueueMu sync.Mutex
 }
 
 func NewBus[EM Emittable, SU Subscriber[EM]](opts ...Option) *Bus[EM, SU] {
@@ -85,8 +83,8 @@ func (b *Bus[EM, SU]) Subscribe(s SU) {
 		return
 	}
 
-	b.subscribeQueueMu.Lock()
-	defer b.subscribeQueueMu.Unlock()
+	b.subscriberQueuesMu.Lock()
+	defer b.subscriberQueuesMu.Unlock()
 
 	b.subscribeQueue.Push(s)
 }
@@ -97,16 +95,17 @@ func (b *Bus[EM, SU]) Unsubscribe(s SU) {
 		return
 	}
 
-	b.unsubscribeQueueMu.Lock()
-	defer b.unsubscribeQueueMu.Unlock()
+	b.subscriberQueuesMu.Lock()
+	defer b.subscriberQueuesMu.Unlock()
 
 	b.unsubscribeQueue.Push(s)
 }
 
 func (b *Bus[EM, SU]) Post(em EM, priority uint8) {
 	b.bufferQueueMu.Lock()
+	defer b.bufferQueueMu.Unlock()
+
 	b.bufferQueue.Push(em, priority)
-	b.bufferQueueMu.Unlock()
 }
 
 func (b *Bus[EM, SU]) Size() int {
@@ -141,10 +140,8 @@ func (b *Bus[EM, SU]) handlingAgent(em EM, s SU) {
 }
 
 func (b *Bus[EM, SU]) updateSubscribers() {
-	b.unsubscribeQueueMu.Lock()
-	b.subscribeQueueMu.Lock()
-	defer b.unsubscribeQueueMu.Unlock()
-	defer b.subscribeQueueMu.Unlock()
+	b.subscriberQueuesMu.Lock()
+	defer b.subscriberQueuesMu.Unlock()
 
 	for s, ok := b.unsubscribeQueue.Pop(); ok; s, ok = b.unsubscribeQueue.Pop() {
 		if i, found := b.findSubscriber(s); found {

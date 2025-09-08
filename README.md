@@ -36,27 +36,56 @@ capability comes along.
 Check the [wiki](https://github.com/AndrewChon/banji/wiki) for a quick tutorial on how to create events, receivers, and
 components.
 
+### "Hello, world!" Example
+
 ```go
-func main() {
-    // This allows us to check for the program exiting.
-    stop := make(chan os.Signal)
-    signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+package main
 
-    eng := banji.New(
-        banji.WithTPS(128),
-        banji.WithDemuxers(8),
-    )
+import (
+	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 
-    // Register your receivers here.
-    eng.Subscribe(NewMyReceiver("Hiii!"))
+	"github.com/AndrewChon/banji"
+)
 
-    eng.Start() // This is non-blocking.
-    defer eng.Stop()
-
-    // Once the engine is running, you and other components
-    // can then post events to the engine.
-    eng.Post(NewMyEvent("Hello!"), 255)
-    
-    <- stop
+// We define a receiver to listen for banji.StartEvent, which has the topic string banji.StartTopic.
+type Greeter struct {
+	banji.ReceiverEmbed
 }
+
+func (g *Greeter) Topic() string {
+	return banji.StartTopic
+}
+
+func (g *Greeter) Handle(event banji.Event) error { 
+	// For our purposes, we don't need any data or fields from the event.
+	_, _ = event.(*banji.StartEvent)
+	
+	fmt.Println("Hello, world!")
+
+	return nil
+}
+
+// Terminal output: "Hello, world!"
+func main() {
+	// This allows us to check for the program exiting.
+	stop := make(chan os.Signal)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+
+	eng := banji.New(
+		banji.WithTPS(128),
+		banji.WithDemuxers(8),
+	)
+
+	// We register our Greeter receiver to the engine.
+	eng.Subscribe(new(Greeter))
+
+	eng.Start() // This is non-blocking.
+	defer eng.Stop()
+
+	<-stop
+}
+
 ```

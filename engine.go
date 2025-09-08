@@ -94,13 +94,12 @@ func (eng *Engine) Subscribe(r Receiver) {
 	eng.bus.Subscribe(r)
 }
 
-// Unsubscribe unregisters a Receiver. Note that this can be an expensive operation to perform; thus, it should be used
-// sparingly.
+// Unsubscribe unregisters a Receiver from its associated topic.
 func (eng *Engine) Unsubscribe(r Receiver) {
 	eng.bus.Unsubscribe(r)
 }
 
-// Post posts an Event to the engine, which will be handled on the next available tick.
+// Post posts an Event to the Engine, which will be handled on the next available tick.
 func (eng *Engine) Post(event Event, priority uint8) {
 	if eng.accepting.Load() {
 		event.mark()
