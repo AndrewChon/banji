@@ -13,7 +13,7 @@ const (
 // BenchmarkPost serves to benchmark the underlying data structure of bus.Bus; more specifically, the efficiency of
 // posting.
 func BenchmarkPost(b *testing.B) {
-	bs := bus.NewBus[*MockEmittable, *MockSubscriber[*MockEmittable]](
+	bs := bus.NewBus[int16, *MockEmittable, *MockSubscriber[*MockEmittable]](
 		bus.WithDemuxers(Demuxers),
 	)
 
@@ -29,7 +29,7 @@ func BenchmarkPost(b *testing.B) {
 // takes to run a tick divided by the number of events within the bus.
 func BenchmarkTick(b *testing.B) {
 	b.ResetTimer()
-	bs := bus.NewBus[*MockEmittable, *MockSubscriber[*MockEmittable]](
+	bs := bus.NewBus[int16, *MockEmittable, *MockSubscriber[*MockEmittable]](
 		bus.WithDemuxers(Demuxers),
 	)
 
@@ -49,7 +49,7 @@ func BenchmarkTick(b *testing.B) {
 // of posting in a parallel setting. Due to the bus's concurrency-safety mechanisms, a slower time per operation is to
 // be expected.
 func BenchmarkParallelPost(b *testing.B) {
-	bs := bus.NewBus[*MockEmittable, *MockSubscriber[*MockEmittable]](
+	bs := bus.NewBus[int16, *MockEmittable, *MockSubscriber[*MockEmittable]](
 		bus.WithDemuxers(Demuxers),
 	)
 

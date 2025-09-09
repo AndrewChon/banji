@@ -18,9 +18,9 @@ func (e *StartEvent) Topic() string {
 	return StartTopic
 }
 
-/* banji.stopLoop */
+/* banji.stop */
 
-const StopTopic = "banji.stopLoop"
+const StopTopic = "banji.stop"
 
 // StopEvent is an Event posted when the engine is about to shut down. It primarily serves as a signal to components to
 // perform any shutdown or cleanup mechanics they may require. StopEvent should not be used as a catalyst for posting
@@ -33,9 +33,9 @@ func (e *StopEvent) Topic() string {
 	return StopTopic
 }
 
-/* banji.preTick */
+/* banji.tick.pre */
 
-const PreTickTopic = "banji.preTick"
+const PreTickTopic = "banji.tick.pre"
 
 // PreTickEvent is an Event posted when a new tick has begun.
 type PreTickEvent struct {
@@ -51,9 +51,9 @@ func (e *PreTickEvent) Tick() time.Time {
 	return e.tick
 }
 
-/* banji.postTick */
+/* banji.tick.post */
 
-const PostTickTopic = "banji.postTick"
+const PostTickTopic = "banji.tick.post"
 
 // PostTickEvent is an Event posted once the work for a given tick has concluded. Therefore, it does not necessarily
 // mean that a new tick has also begun (you should listen for PreTickEvent instead for such purposes).

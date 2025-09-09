@@ -39,7 +39,7 @@ type Bus interface {
 	Tick()
 	Subscribe(r Receiver)
 	Unsubscribe(r Receiver)
-	Post(event Event, priority uint8)
+	Post(event Event, priority int16)
 	Size() int
 }
 

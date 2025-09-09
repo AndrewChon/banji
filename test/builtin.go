@@ -51,7 +51,7 @@ func (r *StopReceiverTest) Handle(e banji.Event) error {
 	return nil
 }
 
-/* banji.preTick */
+/* banji.tick.pre */
 
 type PreTickReceiverTest struct {
 	banji.ReceiverEmbed
@@ -72,7 +72,7 @@ func (r *PreTickReceiverTest) Handle(e banji.Event) error {
 	return nil
 }
 
-/* banji.postTick */
+/* banji.tick.post */
 
 type PostTickReceiverTest struct {
 	banji.ReceiverEmbed

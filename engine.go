@@ -9,6 +9,13 @@ import (
 	"github.com/AndrewChon/banji/bus"
 )
 
+const (
+	stopPriority     int16 = -32768
+	startPriority    int16 = -32768
+	tickPrePriority  int16 = -32766
+	tickPostPriority int16 = -32767
+)
+
 // The Engine brokers communication between decoupled components via Event and Receiver.
 type Engine struct {
 	options   *Options
@@ -26,7 +33,7 @@ func New(opts ...Option) *Engine {
 		stopLoop: make(chan struct{}, 1),
 	}
 
-	eng.bus = bus.NewBus[Event, Receiver](
+	eng.bus = bus.NewBus[int16, Event, Receiver](
 		bus.WithDemuxers(eng.options.Demuxers),
 		bus.WithErrorBuilder(errorBuilder),
 	)
@@ -62,7 +69,7 @@ func (eng *Engine) Start() {
 	eng.active.Store(true)
 	eng.accepting.Store(true)
 
-	eng.Post(new(StartEvent), 0)
+	eng.post(new(StartEvent), startPriority)
 	go eng.runLoop()
 }
 
@@ -73,7 +80,7 @@ func (eng *Engine) Stop() {
 		return
 	}
 
-	eng.Post(new(StopEvent), 0)
+	eng.post(new(StopEvent), stopPriority)
 	eng.accepting.Store(false)
 
 	eng.ticker.Stop()
@@ -101,6 +108,10 @@ func (eng *Engine) Unsubscribe(r Receiver) {
 
 // Post posts an Event to the Engine, which will be handled on the next available tick.
 func (eng *Engine) Post(event Event, priority uint8) {
+	eng.post(event, int16(priority))
+}
+
+func (eng *Engine) post(event Event, priority int16) {
 	if eng.accepting.Load() {
 		event.mark()
 		eng.bus.Post(event, priority)
@@ -113,15 +124,15 @@ func (eng *Engine) runLoop() {
 		case tick := <-eng.ticker.C:
 			eng.loopWg.Add(1)
 
-			eng.Post(&PreTickEvent{
+			eng.post(&PreTickEvent{
 				tick: tick,
-			}, 0)
+			}, tickPrePriority)
 
 			eng.bus.Tick()
 
-			eng.Post(&PostTickEvent{
+			eng.post(&PostTickEvent{
 				tick: tick,
-			}, 0)
+			}, tickPostPriority)
 
 			eng.loopWg.Done()
 		case <-eng.stopLoop:

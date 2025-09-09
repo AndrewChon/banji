@@ -34,11 +34,11 @@ type Subscriber[EM Emittable] interface {
 	Handle(em EM) error
 }
 
-type Bus[EM Emittable, SU Subscriber[EM]] struct {
+type Bus[K cmp.Ordered, EM Emittable, SU Subscriber[EM]] struct {
 	options *Options
 
-	bufferQueue   PriorityQueue[uint8, EM]
-	workingQueue  PriorityQueue[uint8, EM]
+	bufferQueue   PriorityQueue[K, EM]
+	workingQueue  PriorityQueue[K, EM]
 	bufferQueueMu sync.Mutex
 
 	subscribeQueue     *pqueue.CircularBuffer[SU]
@@ -49,12 +49,12 @@ type Bus[EM Emittable, SU Subscriber[EM]] struct {
 	wp *workerPool
 }
 
-func NewBus[EM Emittable, SU Subscriber[EM]](opts ...Option) *Bus[EM, SU] {
+func NewBus[K cmp.Ordered, EM Emittable, SU Subscriber[EM]](opts ...Option) *Bus[K, EM, SU] {
 	options := NewOptions(opts...)
-	b := &Bus[EM, SU]{
+	b := &Bus[K, EM, SU]{
 		options:          options,
-		bufferQueue:      pqueue.NewPairing[uint8, EM](),
-		workingQueue:     pqueue.NewPairing[uint8, EM](),
+		bufferQueue:      pqueue.NewPairing[K, EM](),
+		workingQueue:     pqueue.NewPairing[K, EM](),
 		subscribeQueue:   pqueue.NewCircularBuffer[SU](),
 		unsubscribeQueue: pqueue.NewCircularBuffer[SU](),
 		wp:               newWorkerPool(options.Demuxers),
@@ -63,21 +63,19 @@ func NewBus[EM Emittable, SU Subscriber[EM]](opts ...Option) *Bus[EM, SU] {
 	return b
 }
 
-func (b *Bus[EM, SU]) Tick() {
+func (b *Bus[K, EM, SU]) Tick() {
 	b.updateSubscribers()
 
 	b.bufferQueueMu.Lock()
-	b.workingQueue.(*pqueue.Pairing[uint8, EM]).Meld(b.bufferQueue.(*pqueue.Pairing[uint8, EM]))
+	b.workingQueue.(*pqueue.Pairing[K, EM]).Meld(b.bufferQueue.(*pqueue.Pairing[K, EM]))
 	b.bufferQueueMu.Unlock()
 
 	for em, ok := b.workingQueue.Pop(); ok; em, ok = b.workingQueue.Pop() {
 		b.demux(em)
 	}
-
-	b.wp.wait()
 }
 
-func (b *Bus[EM, SU]) Subscribe(s SU) {
+func (b *Bus[K, EM, SU]) Subscribe(s SU) {
 	topic := s.Topic()
 	if topic == "" {
 		return
@@ -89,7 +87,7 @@ func (b *Bus[EM, SU]) Subscribe(s SU) {
 	b.subscribeQueue.Push(s)
 }
 
-func (b *Bus[EM, SU]) Unsubscribe(s SU) {
+func (b *Bus[K, EM, SU]) Unsubscribe(s SU) {
 	topic := s.Topic()
 	if topic == "" {
 		return
@@ -101,23 +99,23 @@ func (b *Bus[EM, SU]) Unsubscribe(s SU) {
 	b.unsubscribeQueue.Push(s)
 }
 
-func (b *Bus[EM, SU]) Post(em EM, priority uint8) {
+func (b *Bus[K, EM, SU]) Post(em EM, priority K) {
 	b.bufferQueueMu.Lock()
 	defer b.bufferQueueMu.Unlock()
 
 	b.bufferQueue.Push(em, priority)
 }
 
-func (b *Bus[EM, SU]) Size() int {
+func (b *Bus[K, EM, SU]) Size() int {
 	return b.bufferQueue.Size() + b.workingQueue.Size()
 }
 
-func (b *Bus[EM, SU]) demux(em EM) {
+func (b *Bus[K, EM, SU]) demux(em EM) {
 	if em.Topic() == "" {
 		return
 	}
 
-	subs, loaded := b.subscribers.Load(em.Topic())
+	subs, loaded := b.getSubscribers(em.Topic())
 	if !loaded {
 		return
 	}
@@ -125,9 +123,10 @@ func (b *Bus[EM, SU]) demux(em EM) {
 	for _, s := range subs {
 		b.wp.post(func() { b.handlingAgent(em, s) })
 	}
+	b.wp.wait()
 }
 
-func (b *Bus[EM, SU]) handlingAgent(em EM, s SU) {
+func (b *Bus[K, EM, SU]) handlingAgent(em EM, s SU) {
 	err := s.Handle(em)
 	if err == nil {
 		return
@@ -135,11 +134,11 @@ func (b *Bus[EM, SU]) handlingAgent(em EM, s SU) {
 
 	errEm := b.options.ErrorBuilder(err)
 	if errTyped, ok := errEm.(EM); ok {
-		b.Post(errTyped, 0)
+		b.Post(errTyped, K(0))
 	}
 }
 
-func (b *Bus[EM, SU]) updateSubscribers() {
+func (b *Bus[K, EM, SU]) updateSubscribers() {
 	b.subscriberQueuesMu.Lock()
 	defer b.subscriberQueuesMu.Unlock()
 
@@ -168,7 +167,7 @@ func (b *Bus[EM, SU]) updateSubscribers() {
 	}
 }
 
-func (b *Bus[EM, SU]) findSubscriber(s SU) (index int, found bool) {
+func (b *Bus[K, EM, SU]) findSubscriber(s SU) (index int, found bool) {
 	subs, loaded := b.subscribers.Load(s.Topic())
 	if !loaded {
 		return 0, false
@@ -181,4 +180,30 @@ func (b *Bus[EM, SU]) findSubscriber(s SU) (index int, found bool) {
 	}
 
 	return 0, false
+}
+
+func (b *Bus[K, EM, SU]) getSubscribers(topic string) ([]SU, bool) {
+	var foundSubscribers []SU
+
+	// Global subscribers.
+	if universalSubs, ok := b.subscribers.Load("*"); ok {
+		foundSubscribers = append(foundSubscribers, universalSubs...)
+	}
+
+	// Retrieve subscribers listening to parent namespaces.
+	for i := 0; i < len(topic); i++ {
+		if topic[i] == '.' {
+			key := topic[:i] + ".*"
+			if subs, ok := b.subscribers.Load(key); ok {
+				foundSubscribers = append(foundSubscribers, subs...)
+			}
+		}
+	}
+
+	// Finally, retrieve subscribers listening to the specific namespaced topic string.
+	if subs, ok := b.subscribers.Load(topic); ok {
+		foundSubscribers = append(foundSubscribers, subs...)
+	}
+
+	return foundSubscribers, true
 }
